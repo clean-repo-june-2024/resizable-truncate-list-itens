@@ -18,7 +18,7 @@ const createData = (count: number): ItemType[] => {
 };
 
 const RenderItem = ({ label, itemRef, _key }: { label: string; itemRef: React.RefObject<HTMLDivElement>,  }) => (
-  <div ref={itemRef} id={_key}  className="whitespace-nowrap px-2 py-1 bg-slate-500 opacity-85 truncate !min-w-14 ">
+  <div ref={itemRef} id={_key} className="whitespace-nowrap px-2 py-1 bg-slate-500 opacity-85 truncate !min-w-14 ">
     {label}
   </div>
 );
@@ -30,17 +30,12 @@ const PlusItem = ({ label, itemRef }: { label: string; itemRef: React.RefObject<
 );
 
 const deepCopyRefValue = (ref: React.RefObject<any>) => {
-  // Create a new ref
   const newRef = createRef<any>();
-
-  // Deep copy logic for DOM node
   if (ref.current instanceof HTMLElement) {
     newRef.current = ref.current.cloneNode(true);
   } else {
-    // Handle other types if necessary
     newRef.current = JSON.parse(JSON.stringify(ref.current));
   }
-
   return newRef;
 };
 
@@ -50,23 +45,24 @@ const App = () => {
   const [visibleCount, setVisibleCount] = useState(data.length);
   const containerRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef(data.map(() => createRef<HTMLDivElement>()));
-  const initialRefs = useRef<React.RefObject<HTMLDivElement>[] | undefined>(undefined);
+  const initialRefs = useRef<React.RefObject<HTMLDivElement>[]>([]);
   const prevContainerWidthRef = useRef<number | null>(null);
 
   useEffect(() => {
-    initialRefs.current = itemRefs.current.map(item => lodash.cloneDeep((item)) )
+    if (initialRefs.current.length === 0) {
+      initialRefs.current = itemRefs.current.map(item => deepCopyRefValue(item));
+    }
   }, []);
 
   useEffect(() => {
     const updateVisibleCount = () => {
-      if (containerRef.current && initialRefs.current) {
+      if (containerRef.current && initialRefs.current.length) {
         const containerWidth = containerRef.current.offsetWidth;
         const restWidth = 50; // Approximate width of the +N... indicator
         let totalWidth = 0;
         let maxVisibleItems = 0;
 
         const isGrowing = prevContainerWidthRef.current !== null && containerWidth > prevContainerWidthRef.current;
-        console.log("isGrowing", initialRefs);
 
         const _list = [
           ...itemRefs.current,
@@ -76,7 +72,6 @@ const App = () => {
         ];
 
         const refsToUse = isGrowing ? _list : itemRefs.current;
-        console.log('refsToUse', refsToUse);
 
         for (let i = 0; i < refsToUse.length; i++) {
           const itemRef = refsToUse[i];
@@ -92,7 +87,6 @@ const App = () => {
         setVisibleCount(maxVisibleItems);
         prevContainerWidthRef.current = containerWidth;
       }
-      
     };
 
     const resizeObserver = new ResizeObserver(updateVisibleCount);
@@ -111,7 +105,6 @@ const App = () => {
 
   useEffect(() => {
     itemRefs.current = data.map((_, i) => itemRefs.current[i] || createRef<HTMLDivElement>());
-    initialRefs.current = [...itemRefs.current];
   }, [data]);
 
   return (
