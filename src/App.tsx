@@ -55,7 +55,7 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    const updateVisibleCount = () => {
+    const updateVisibleCount = lodash.debounce(() => {
       if (containerRef.current && initialRefs.current.length) {
         const containerWidth = containerRef.current.offsetWidth;
         const restWidth = 50; // Approximate width of the +N... indicator
@@ -87,7 +87,7 @@ const App = () => {
         setVisibleCount(maxVisibleItems);
         prevContainerWidthRef.current = containerWidth;
       }
-    };
+    }, 33); // Adjust the debounce delay as needed
 
     const resizeObserver = new ResizeObserver(updateVisibleCount);
     if (containerRef.current) {
@@ -100,6 +100,7 @@ const App = () => {
       if (containerRef.current) {
         resizeObserver.unobserve(containerRef.current);
       }
+      updateVisibleCount.cancel(); // Cancel any pending debounced calls
     };
   }, [data.length]);
 
